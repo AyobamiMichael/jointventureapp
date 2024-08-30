@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "844484131381",
+    "project_id": "jointventure-91001",
+    "storage_bucket": "jointventure-91001.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:844484131381:android:a9337df6819c96246d0f7c",
+        "android_client_info": {
+          "package_name": "com.example.jointventureapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDCQt9s9t_4hLHTbvLxR1iYe6jFMF65Jh4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
