@@ -34,13 +34,27 @@ class _PollCreationPageState extends State<PollCreationPage> {
 
   Future<void> _loadGroupNames() async {
     try {
-      final snapshot =
-          await FirebaseFirestore.instance.collection('groupinfo').get();
-      final List<String> names =
-          snapshot.docs.map((doc) => doc['groupname'] as String).toList();
-      setState(() {
-        _groupNames = names;
-      });
+      final groupCollection =
+          FirebaseFirestore.instance.collection('groupinfo');
+      // final snapshot =
+      //await FirebaseFirestore.instance.collection('groupinfo').get();
+
+      //final List<String> names =
+      //  snapshot.docs.map((doc) => doc['groupname'] as String).toList();
+
+      QuerySnapshot groupQuerySnapshot = await groupCollection
+          .where('groupmembers', arrayContains: widget.username)
+          .get();
+      for (var groupDoc in groupQuerySnapshot.docs) {
+        // groupName = groupDoc['groupname'];
+        setState(() {
+          _groupNames.add(groupDoc['groupname']);
+        });
+      }
+      print(_groupNames);
+      // setState(() {
+      // _groupNames = names;
+      //});
     } catch (e) {
       print('Error loading group names: $e');
     }

@@ -13,12 +13,16 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
   final TextEditingController _jointPasswordController =
       TextEditingController();
   String walletAddress = 'wallet address not available';
+  String? _selectedGroupName;
+  final List<String> _groupNames = [];
+  final List<String> _userNames = [];
 
   @override
   void initState() {
     super.initState();
     _fetchWalletAddress();
     print(widget.username);
+    checkGroups();
   }
 
   Future<void> _fetchWalletAddress() async {
@@ -32,6 +36,18 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
         walletAddress = walletDoc['walletaddress']?.isNotEmpty == true
             ? walletDoc['walletaddress']
             : 'wallet address not available';
+      });
+    }
+  }
+
+  void checkGroups() async {
+    final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
+    QuerySnapshot groupQuerySnapshot = await groupCollection
+        .where('groupmembers', arrayContains: widget.username)
+        .get();
+    for (var groupDoc in groupQuerySnapshot.docs) {
+      setState(() {
+        _groupNames.add(groupDoc['groupname']);
       });
     }
   }
@@ -51,27 +67,59 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
     final sharingTime = '';
     final walletAddr =
         walletAddress == 'wallet address not available' ? '' : walletAddress;
-    final username = 'your-username'; // Replace with the actual username
+    final username = widget.username; // Replace with the actual
+    String verifyUserName = '';
 
-    try {
-      // Add a new document with the provided data
-      await FirebaseFirestore.instance
-          .collection('walletcreationcollection')
-          .add({
-        'jointpassword': FieldValue.arrayUnion([jointPassword]),
-        'walletaddress': walletAddr,
-        'sharingformular': sharingFormular,
-        'sharingtime': sharingTime,
-        'username': FieldValue.arrayUnion([username]),
-      });
+    final groupWalletCollection =
+        FirebaseFirestore.instance.collection('walletcreationcollection');
+    QuerySnapshot groupQuerySnapshot = await groupWalletCollection
+        .where('username', arrayContains: widget.username)
+        .get();
+    for (var groupWalletDoc in groupQuerySnapshot.docs) {
+      verifyUserName = groupWalletDoc['username'].toString();
+    }
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Wallet data submitted successfully')),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error submitting data: $e')),
-      );
+    final collectionSnapshot = await groupWalletCollection.limit(1).get();
+    if (collectionSnapshot.docs.isNotEmpty) {
+      print('Not Empty');
+      print(verifyUserName.contains(username));
+      if (verifyUserName.contains(username)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('You already created a password')),
+        );
+      } else {
+        // Update the password list with the new password
+        final querySnapshot = await FirebaseFirestore.instance
+            .collection('walletcreationcollection')
+            .where('groupname', isEqualTo: _selectedGroupName)
+            .get();
+      }
+    } else {
+      try {
+        // Add a new document with the provided data
+
+        await FirebaseFirestore.instance
+            .collection('walletcreationcollection')
+            .add({
+          'jointpassword': FieldValue.arrayUnion([jointPassword]),
+          'walletaddress': walletAddr,
+          'sharingformular': sharingFormular,
+          'sharingtime': sharingTime,
+          'username': FieldValue.arrayUnion([username]),
+          'groupname': _selectedGroupName
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wallet data submitted successfully')),
+        );
+      } catch (e) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          // SnackBar(content: Text('Error submitting data: $e')),
+          const SnackBar(
+              content:
+                  Text('Error submitting data, Ensure you belong to a group')),
+        );
+      }
     }
   }
 
@@ -101,6 +149,31 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
                 child: Text(walletAddress),
               ),
             ),
+            const SizedBox(height: 16.0),
+            DropdownButtonFormField<String>(
+              decoration: const InputDecoration(
+                labelText: 'Group Name',
+                border: OutlineInputBorder(),
+              ),
+              value: _selectedGroupName,
+              items: _groupNames.map((name) {
+                return DropdownMenuItem<String>(
+                  value: name,
+                  child: Text(name),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedGroupName = value;
+                });
+              },
+              validator: (value) {
+                if (value == null || value.isEmpty) {
+                  return 'Please select a group';
+                }
+                return null;
+              },
+            ),
             const SizedBox(height: 20),
             const Text(
               'Enter Joint Password',
@@ -115,9 +188,25 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
               obscureText: true,
             ),
             const SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: _submitWalletData,
-              child: const Text('Submit'),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: _submitWalletData,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  shape: const RoundedRectangleBorder(
+                    borderRadius: BorderRadius.zero,
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                ),
+                child: Text(
+                  'Submit',
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
