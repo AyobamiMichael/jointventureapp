@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:crypto/crypto.dart';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
@@ -12,10 +16,11 @@ class WalletCreationPage extends StatefulWidget {
 class _WalletCreationPageState extends State<WalletCreationPage> {
   final TextEditingController _jointPasswordController =
       TextEditingController();
-  String walletAddress = 'wallet address not available';
+  // String walletAddress = 'wallet address not available';
   String? _selectedGroupName;
   final List<String> _groupNames = [];
   final List<String> _userNames = [];
+  String walletAddressMessage = '';
 
   @override
   void initState() {
@@ -33,9 +38,9 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
 
     if (walletDoc.exists) {
       setState(() {
-        walletAddress = walletDoc['walletaddress']?.isNotEmpty == true
+        walletAddressMessage = walletDoc['walletaddress']?.isNotEmpty == true
             ? walletDoc['walletaddress']
-            : 'wallet address not available';
+            : walletAddressMessage;
       });
     }
   }
@@ -61,12 +66,14 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
       );
       return;
     }
+    // check if the password is ready for the wallet
+    checkForJointPasswordsComplete();
 
     // Set default values if they are not available
     final sharingFormular = '';
     final sharingTime = '';
-    final walletAddr =
-        walletAddress == 'wallet address not available' ? '' : walletAddress;
+    //  final walletAddr =
+    //    walletAddress == walletAddressMessage ? '' : walletAddress;
     final username = widget.username; // Replace with the actual
     String verifyUserName = '';
 
@@ -93,6 +100,18 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
             .collection('walletcreationcollection')
             .where('groupname', isEqualTo: _selectedGroupName)
             .get();
+
+        for (var doc in querySnapshot.docs) {
+          final groupDocRef = doc.reference;
+          await groupDocRef.update({
+            'jointpassword': FieldValue.arrayUnion([jointPassword]),
+            'username': FieldValue.arrayUnion([username])
+          });
+        }
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Wallet data submitted successfully')),
+        );
       }
     } else {
       try {
@@ -102,7 +121,6 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
             .collection('walletcreationcollection')
             .add({
           'jointpassword': FieldValue.arrayUnion([jointPassword]),
-          'walletaddress': walletAddr,
           'sharingformular': sharingFormular,
           'sharingtime': sharingTime,
           'username': FieldValue.arrayUnion([username]),
@@ -121,6 +139,79 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
         );
       }
     }
+  }
+
+  void checkForJointPasswordsComplete() async {
+    // Checking for time to create wallet for the group
+    String numberOfGroupMembers = '';
+    List<dynamic> listOfJointPasswords = [];
+
+    final querySnapshotForNumberOfMembers = await FirebaseFirestore.instance
+        .collection('groupinfo')
+        .where('groupname', isEqualTo: _selectedGroupName)
+        .get();
+    final querySnapshotForNumberOfJointPasswords = await FirebaseFirestore
+        .instance
+        .collection('walletcreationcollection')
+        .where('groupname', isEqualTo: _selectedGroupName)
+        .get();
+
+    for (var groupDoc in querySnapshotForNumberOfJointPasswords.docs) {
+      listOfJointPasswords = groupDoc['jointpassword'];
+    }
+
+    for (var groupDoc in querySnapshotForNumberOfMembers.docs) {
+      numberOfGroupMembers = groupDoc['numberofmembers'].toString();
+    }
+
+    if (listOfJointPasswords.length == int.parse(numberOfGroupMembers)) {
+      createGroupMetaMaskWallet(listOfJointPasswords, _selectedGroupName!);
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Group Wallet successfully created')),
+      );
+    } else {
+      print('Wallet Address not ready, Joint Password Not completed');
+      walletAddressMessage =
+          "Joint Password Not completed, Wallet Address not ready";
+    }
+  }
+
+  String _encryptPassword(String password) {
+    // Convert password to bytes
+    final bytes = utf8.encode(password);
+
+    // Encrypt password using SHA256
+    final digest = sha256.convert(bytes);
+
+    // Convert digest to string
+    return digest.toString();
+  }
+
+  void createGroupMetaMaskWallet(
+      List<dynamic> listOfJointPasswords, String groupName) async {
+    // if this numberOfGroupMembers is equall to the number of jointpasswords create wallet
+    // message your wallet is ready now
+    String randomWalletAddress = generateRandomWalletAddress();
+    final encryptedPassword = _encryptPassword(listOfJointPasswords.join());
+    print('Generated Wallet Address: $randomWalletAddress');
+
+    await FirebaseFirestore.instance
+        .collection('premetaskwalletcollection')
+        .add({
+      'groupname': groupName,
+      'walletaddress': randomWalletAddress,
+      'grouppassword': encryptedPassword,
+    });
+  }
+
+  String generateRandomWalletAddress() {
+    const String chars =
+        '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    final Random random = Random.secure();
+    final int addressLength = 34; // Typical length for a Bitcoin address
+
+    return List.generate(
+        addressLength, (index) => chars[random.nextInt(chars.length)]).join();
   }
 
   @override
@@ -146,7 +237,7 @@ class _WalletCreationPageState extends State<WalletCreationPage> {
                   border: Border.all(color: Colors.grey),
                   borderRadius: BorderRadius.circular(4.0),
                 ),
-                child: Text(walletAddress),
+                child: Text(walletAddressMessage),
               ),
             ),
             const SizedBox(height: 16.0),
