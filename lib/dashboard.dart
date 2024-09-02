@@ -3,6 +3,7 @@ import 'package:jointventureapp/creategroup.dart';
 import 'package:jointventureapp/group_details.dart';
 import 'package:jointventureapp/pollcreation.dart';
 import 'package:jointventureapp/resultpage.dart';
+import 'package:jointventureapp/walletaddresspage.dart';
 import 'package:jointventureapp/walletcreation.dart';
 import 'votingpage.dart';
 import 'loginpage.dart';
@@ -184,6 +185,17 @@ class _DashboardState extends State<Dashboard> {
             title: const Text('Money Sharing Formula'),
             onTap: () {
               Navigator.of(context).pop();
+            },
+          ),
+          ListTile(
+            leading: const Icon(Icons.wallet),
+            title: const Text('Group Wallet Address'),
+            onTap: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (context) =>
+                        Walletaddresspage(username: widget.username)),
+              );
             },
           ),
           SwitchListTile(
