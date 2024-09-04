@@ -60,7 +60,8 @@ class _SignUpPageState extends State<SignUpPage> {
         'username': username,
         'email': email,
         'password': encryptedPassword,
-        'option': ''
+        'option': '',
+        'comment': ''
       });
 
       _usernameController.clear();

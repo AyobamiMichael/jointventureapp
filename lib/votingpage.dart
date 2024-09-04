@@ -18,7 +18,7 @@ class _VotingPageState extends State<VotingPage> {
   // Remove CountdownManager and related variables
   int _pollDurationInSeconds = 0;
   bool _hasVoted = false;
-
+  final TextEditingController _commentController = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -34,6 +34,7 @@ class _VotingPageState extends State<VotingPage> {
   @override
   void dispose() {
     // No countdown manager to dispose
+    _commentController.dispose();
     super.dispose();
   }
 
@@ -83,7 +84,7 @@ class _VotingPageState extends State<VotingPage> {
         : 0; // Assuming duration is in minutes
   }
 
-  Future<void> _submitVote(String option) async {
+  Future<void> _submitVote(String option, String comment) async {
     final userCollection =
         FirebaseFirestore.instance.collection('jointventureuserdata');
     final pollCollection =
@@ -105,9 +106,9 @@ class _VotingPageState extends State<VotingPage> {
       final userData = userDoc.docs.first;
       final userDocId = userData.id;
 
-      await userCollection.doc(userDocId).update({
-        'option': option,
-      });
+      await userCollection
+          .doc(userDocId)
+          .update({'option': option, 'comment': comment});
 
       final pollData = await _fetchPollData();
       if (pollData == null) {
@@ -218,10 +219,17 @@ class _VotingPageState extends State<VotingPage> {
                   Image.network(imageUrl),
                   const SizedBox(height: 16.0),
                 ],
+                TextFormField(
+                  controller: _commentController,
+                  decoration: const InputDecoration(
+                    labelText: 'Comment',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
                 const Spacer(),
                 ElevatedButton(
                   onPressed: () {
-                    _submitVote('Yes');
+                    _submitVote('Yes', _commentController.text);
                     //Navigator.pop(context);
                     Future.delayed(const Duration(milliseconds: 500), () {
                       Navigator.pop(context);
@@ -235,7 +243,7 @@ class _VotingPageState extends State<VotingPage> {
                 const SizedBox(height: 16.0),
                 ElevatedButton(
                   onPressed: () {
-                    _submitVote('No');
+                    _submitVote('No', _commentController.text);
                     Navigator.pop(context);
                   },
                   child: const Text('No'),
