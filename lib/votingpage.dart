@@ -15,25 +15,25 @@ class VotingPage extends StatefulWidget {
 }
 
 class _VotingPageState extends State<VotingPage> {
-  // Remove CountdownManager and related variables
   int _pollDurationInSeconds = 0;
   bool _hasVoted = false;
   final TextEditingController _commentController = TextEditingController();
+
   @override
   void initState() {
     super.initState();
     _fetchPollData().then((pollData) {
       if (pollData != null) {
-        // Directly use the duration from the data without processing
-        //   _pollDurationInSeconds = _parseDuration(pollData['pollDuration']);
-        // No need to check vote status or initialize the countdown manager
+        int pollDurationInSeconds = pollData['pollDurationInSeconds'];
+        setState(() {
+          _pollDurationInSeconds = pollDurationInSeconds;
+        });
       }
     });
   }
 
   @override
   void dispose() {
-    // No countdown manager to dispose
     _commentController.dispose();
     super.dispose();
   }
@@ -57,18 +57,28 @@ class _VotingPageState extends State<VotingPage> {
 
         for (var pollDoc in pollQuerySnapshot.docs) {
           String pollDurationStr = pollDoc['pollDuration'];
-          //int pollDuration = _parsePollDuration(pollDurationStr);
+          DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
+          DateTime expirationTime =
+              (pollDoc['expirationTime'] as Timestamp).toDate();
 
-          return {
-            'pollName': pollDoc['pollName'],
-            'pollMessage': pollDoc['pollMessage'],
-            'imageUrl': pollDoc['imageUrl'],
-            'option': pollDoc['option'],
-            'dateTimeNow': (pollDoc['dateTimeNow'] as Timestamp).toDate(),
-            'expirationTime': (pollDoc['expirationTime'] as Timestamp).toDate(),
-            'pollDuration': pollDurationStr,
-            'username': pollDoc['username'],
-          };
+          DateTime now = DateTime.now();
+          if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
+            int pollDurationInSeconds = _parsePollDuration(pollDurationStr);
+
+            return {
+              'pollName': pollDoc['pollName'],
+              'pollMessage': pollDoc['pollMessage'],
+              'imageUrl': pollDoc['imageUrl'],
+              'option': pollDoc['option'],
+              'dateTimeNow': dateTimeNow,
+              'expirationTime': expirationTime,
+              'pollDuration': pollDurationStr,
+              'username': pollDoc['username'],
+              'pollDurationInSeconds': pollDurationInSeconds,
+            };
+          } else {
+            print('Poll has expired or is not yet active.');
+          }
         }
       }
     } catch (e) {
@@ -91,8 +101,6 @@ class _VotingPageState extends State<VotingPage> {
         FirebaseFirestore.instance.collection('pollcollection');
 
     try {
-      // Skip checking if user has voted
-      // Check if the user exists
       final userDoc = await userCollection
           .where('username', isEqualTo: widget.username)
           .limit(1)
@@ -128,16 +136,10 @@ class _VotingPageState extends State<VotingPage> {
       }
 
       final pollDocId = pollQuerySnapshot.docs.first.id;
-      print(pollDocId);
-      // Fetch the current options array
       final pollDocSnapshot = await pollCollection.doc(pollDocId).get();
       List<dynamic> currentOptions = pollDocSnapshot.get('option') ?? [];
-      print('Current options before update: $currentOptions');
-
-      // Add the new vote to the array
       currentOptions.add(option);
 
-// Update the Firestore document with the new array
       await pollCollection.doc(pollDocId).update({
         'option': currentOptions,
       });
@@ -181,82 +183,129 @@ class _VotingPageState extends State<VotingPage> {
         final pollName = pollData['pollName'] ?? 'Poll';
         final pollMessage = pollData['pollMessage'] ?? 'No message provided';
         final imageUrl = pollData['imageUrl'];
+        final pollDuration = pollData['pollDuration'];
+        final expirationTime = pollData['expirationTime'] as DateTime;
+        final currentTime = DateTime.now();
+        final duration = _convertPollDurationToSeconds(pollDuration);
+
+        if (expirationTime != null) {
+          final timeDifference =
+              expirationTime.difference(currentTime).inSeconds;
+          if (timeDifference <= 0) {
+            return Scaffold(
+              body: Center(
+                child: Text('Poll has expired'),
+              ),
+            );
+          }
+        }
 
         return Scaffold(
           appBar: AppBar(
             title: Text(pollName),
           ),
-          body: Padding(
-            padding: const EdgeInsets.all(16.0),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Container(
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.black),
-                    borderRadius: BorderRadius.circular(8.0),
+          body: LayoutBuilder(
+            builder: (context, constraints) {
+              return SingleChildScrollView(
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(minHeight: constraints.maxHeight),
+                  child: IntrinsicHeight(
+                    child: Padding(
+                      padding: const EdgeInsets.all(16.0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Container(
+                            decoration: BoxDecoration(
+                              border: Border.all(color: Colors.black),
+                              borderRadius: BorderRadius.circular(8.0),
+                            ),
+                            padding: const EdgeInsets.all(8.0),
+                            child: Text(
+                              pollName,
+                              style: const TextStyle(
+                                  fontSize: 24.0, fontWeight: FontWeight.bold),
+                              textAlign: TextAlign.center,
+                            ),
+                          ),
+                          const SizedBox(height: 16.0),
+                          Text(
+                            'Duration: ${_pollDurationInSeconds ~/ 60} min ${_pollDurationInSeconds % 60} sec',
+                            style: const TextStyle(
+                                fontSize: 16.0, color: Colors.grey),
+                          ),
+                          const SizedBox(height: 16.0),
+                          Text(
+                            pollMessage,
+                            style: const TextStyle(fontSize: 20.0),
+                          ),
+                          const SizedBox(height: 16.0),
+                          if (imageUrl != null) ...[
+                            Image.network(imageUrl),
+                            const SizedBox(height: 16.0),
+                          ],
+                          TextFormField(
+                            controller: _commentController,
+                            decoration: const InputDecoration(
+                              labelText: 'Comment',
+                              border: OutlineInputBorder(),
+                            ),
+                          ),
+                          const Spacer(),
+                          ElevatedButton(
+                            onPressed: () {
+                              _submitVote('Yes', _commentController.text);
+                              Future.delayed(const Duration(milliseconds: 500),
+                                  () {
+                                Navigator.pop(context);
+                              });
+                            },
+                            child: const Text('Yes'),
+                            style: ElevatedButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                          ),
+                          const SizedBox(height: 16.0),
+                          ElevatedButton(
+                            onPressed: () {
+                              _submitVote('No', _commentController.text);
+                              Navigator.pop(context);
+                            },
+                            child: const Text('No'),
+                            style: ElevatedButton.styleFrom(
+                              padding:
+                                  const EdgeInsets.symmetric(vertical: 16.0),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
                   ),
-                  padding: const EdgeInsets.all(8.0),
-                  child: Text(
-                    pollName,
-                    style: const TextStyle(
-                        fontSize: 24.0, fontWeight: FontWeight.bold),
-                    textAlign: TextAlign.center,
-                  ),
                 ),
-                const SizedBox(height: 16.0),
-                Text(
-                  'Duration: ${_pollDurationInSeconds ~/ 60} min ${_pollDurationInSeconds % 60} sec',
-                  style: const TextStyle(fontSize: 16.0, color: Colors.grey),
-                ),
-                const SizedBox(height: 16.0),
-                Text(
-                  pollMessage,
-                  style: const TextStyle(fontSize: 20.0),
-                ),
-                const SizedBox(height: 16.0),
-                if (imageUrl != null) ...[
-                  Image.network(imageUrl),
-                  const SizedBox(height: 16.0),
-                ],
-                TextFormField(
-                  controller: _commentController,
-                  decoration: const InputDecoration(
-                    labelText: 'Comment',
-                    border: OutlineInputBorder(),
-                  ),
-                ),
-                const Spacer(),
-                ElevatedButton(
-                  onPressed: () {
-                    _submitVote('Yes', _commentController.text);
-                    //Navigator.pop(context);
-                    Future.delayed(const Duration(milliseconds: 500), () {
-                      Navigator.pop(context);
-                    });
-                  },
-                  child: const Text('Yes'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  ),
-                ),
-                const SizedBox(height: 16.0),
-                ElevatedButton(
-                  onPressed: () {
-                    _submitVote('No', _commentController.text);
-                    Navigator.pop(context);
-                  },
-                  child: const Text('No'),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                  ),
-                ),
-              ],
-            ),
+              );
+            },
           ),
         );
       },
     );
+  }
+
+  int _convertPollDurationToSeconds(String duration) {
+    final durationParts = duration.split(' ');
+    if (durationParts.length == 2) {
+      final value = int.tryParse(durationParts[0]);
+      final unit = durationParts[1].toLowerCase();
+      if (value != null) {
+        switch (unit) {
+          case 'hours':
+            return value * 3600;
+          case 'minutes':
+            return value * 60;
+        }
+      }
+    }
+    return 0;
   }
 }
 
@@ -271,12 +320,26 @@ class _VotingPageState extends State<VotingPage> {
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // THE CODE THAT IMPLEMENTS THE TIMES
-
-
-
-/**
- * import 'package:flutter/material.dart';
+/*import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'globals.dart' as globals;
 
@@ -574,4 +637,13 @@ class _VotingPageState extends State<VotingPage> {
   }
 }
 
- */
+*/ 
+
+
+
+
+
+
+
+
+
