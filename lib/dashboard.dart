@@ -5,6 +5,7 @@ import 'package:jointventureapp/pollcreation.dart';
 import 'package:jointventureapp/resultpage.dart';
 import 'package:jointventureapp/walletaddresspage.dart';
 import 'package:jointventureapp/walletcreation.dart';
+import 'package:jointventureapp/weightedvotingcreationpage.dart';
 import 'votingpage.dart';
 import 'loginpage.dart';
 
@@ -182,9 +183,13 @@ class _DashboardState extends State<Dashboard> {
           ),
           ListTile(
             leading: const Icon(Icons.money),
-            title: const Text('Money Sharing Formula'),
+            title: const Text('Weighted Voting'),
             onTap: () {
-              Navigator.of(context).pop();
+              Navigator.of(context).push(
+                MaterialPageRoute(
+                    builder: (context) =>
+                        Weightedvotingcreationpage(username: widget.username)),
+              );
             },
           ),
           ListTile(
