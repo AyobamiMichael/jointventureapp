@@ -27,6 +27,7 @@ class _VoteResultPageState extends State<VoteResultPage> {
   }
 
   Future<Map<String, dynamic>> _fetchLatestPollData() async {
+    print('YES');
     final pollCollection =
         FirebaseFirestore.instance.collection('pollcollection');
 
@@ -35,7 +36,7 @@ class _VoteResultPageState extends State<VoteResultPage> {
       final pollQuerySnapshot = await pollCollection
           .where('groupname', isEqualTo: groupName)
           .orderBy(FieldPath.documentId,
-              descending: false) // Order by document ID
+              descending: true) // Order by document ID
           .limit(1) // Get the last document
           .get();
 
@@ -49,7 +50,10 @@ class _VoteResultPageState extends State<VoteResultPage> {
         // Calculate time difference
         final timeDifference = expirationTime.difference(currentTime).inSeconds;
 
+        print(pollData);
+
         // If poll has expired, return a result indicating expiration
+
         if (timeDifference <= 0) {
           return {'expired': true};
         }
@@ -123,6 +127,7 @@ class _VoteResultPageState extends State<VoteResultPage> {
 
           final yesPercentage = pollData['yesPercentage'] ?? 0.0;
           final noPercentage = pollData['noPercentage'] ?? 0.0;
+          print(yesPercentage);
 
           return Padding(
             padding: const EdgeInsets.all(16.0),
@@ -137,9 +142,9 @@ class _VoteResultPageState extends State<VoteResultPage> {
                         response.spot != null) {
                       final index = response.spot!.touchedBarGroupIndex;
                       if (index == 0) {
-                        _navigateToVotersListPage('Yes');
+                        _navigateToVotersListPage("Yes");
                       } else if (index == 1) {
-                        _navigateToVotersListPage('No');
+                        _navigateToVotersListPage("No");
                       }
                     }
                   },
@@ -291,7 +296,7 @@ class VotersListPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
         appBar: AppBar(
-          title: Text('$option Voters'),
+          title: Text(':$option: Voters Response'),
         ),
         body: FutureBuilder<List<Voter>>(
           future: _fetchVoters(
@@ -308,7 +313,7 @@ class VotersListPage extends StatelessWidget {
             final voters = snapshot.data ?? [];
 
             if (voters.isEmpty) {
-              return const Center(child: Text('No voters found.'));
+              return const Center(child: Text('"NO" voters response found.'));
             }
 
             return ListView.builder(

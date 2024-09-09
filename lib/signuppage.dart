@@ -116,15 +116,27 @@ class _SignUpPageState extends State<SignUpPage> {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(
-                    'Join Joint Venture',
-                    style: const TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                  Image.asset(
+                    'assets/images/M21logo.png',
+                    width: 200,
+                    height: 200,
+                  ),
+                  const Text(
+                    'M 2 1 W A L L E T',
+                    style: TextStyle(
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.blue),
                     textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 40),
+                  const Text(
+                    'Many To One Wallet For Community Projects',
+                    style: TextStyle(
+                        fontSize: 15,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black),
+                    textAlign: TextAlign.center,
+                  ),
                   TextField(
                     controller: _usernameController,
                     decoration: const InputDecoration(
@@ -184,7 +196,6 @@ class _SignUpPageState extends State<SignUpPage> {
                       ),
                     ),
                   ),
-                  const SizedBox(height: 20),
                   TextButton(
                     onPressed: () => _login(context),
                     child: const Text(
