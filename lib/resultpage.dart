@@ -43,9 +43,11 @@ class _VoteResultPageState extends State<VoteResultPage> {
       if (pollQuerySnapshot.docs.isNotEmpty) {
         // Fetch the latest poll data
         final pollData = pollQuerySnapshot.docs.first.data();
+
         final expirationTime =
             (pollData['expirationTime'] as Timestamp).toDate();
         final currentTime = DateTime.now();
+        print(expirationTime);
 
         // Calculate time difference
         final timeDifference = expirationTime.difference(currentTime).inSeconds;
