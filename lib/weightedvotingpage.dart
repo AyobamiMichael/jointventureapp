@@ -130,6 +130,8 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     _controller70To80.text = pollData['70% - 80%'].toString();
     _controller80To90.text = pollData['80% - 90%'].toString();
     _controller90To100.text = pollData['90% - 100%'].toString();
+
+    print(pollData['10% - 20%']);
   }
 
   // Widget to display percentage outputs
