@@ -35,16 +35,18 @@ class _VoteResultPageState extends State<VoteResultPage> {
       final pollQuerySnapshot = await pollCollection
           .where('groupname', isEqualTo: groupName)
           .orderBy(FieldPath.documentId,
-              descending: false) // Order by document ID
+              descending: true) // Order by document ID
           .limit(1) // Get the last document
           .get();
 
       if (pollQuerySnapshot.docs.isNotEmpty) {
         // Fetch the latest poll data
         final pollData = pollQuerySnapshot.docs.first.data();
+
         final expirationTime =
             (pollData['expirationTime'] as Timestamp).toDate();
         final currentTime = DateTime.now();
+        print(expirationTime);
 
         // Calculate time difference
         final timeDifference = expirationTime.difference(currentTime).inSeconds;
