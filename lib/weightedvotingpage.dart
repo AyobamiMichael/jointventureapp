@@ -15,18 +15,19 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
   String? _selectedGroupName;
   List<String> _groupNames = [];
   bool _isLoading = false;
+  final TextEditingController _commentController = TextEditingController();
 
   // TextEditingControllers for the percentage ranges
-  TextEditingController _controller0To10 = TextEditingController();
-  TextEditingController _controller10To20 = TextEditingController();
-  TextEditingController _controller20To30 = TextEditingController();
-  TextEditingController _controller30To40 = TextEditingController();
-  TextEditingController _controller40To50 = TextEditingController();
-  TextEditingController _controller50To60 = TextEditingController();
-  TextEditingController _controller60To70 = TextEditingController();
-  TextEditingController _controller70To80 = TextEditingController();
-  TextEditingController _controller80To90 = TextEditingController();
-  TextEditingController _controller90To100 = TextEditingController();
+  final TextEditingController _controller0To10 = TextEditingController();
+  final TextEditingController _controller10To20 = TextEditingController();
+  final TextEditingController _controller20To30 = TextEditingController();
+  final TextEditingController _controller30To40 = TextEditingController();
+  final TextEditingController _controller40To50 = TextEditingController();
+  final TextEditingController _controller50To60 = TextEditingController();
+  final TextEditingController _controller60To70 = TextEditingController();
+  final TextEditingController _controller70To80 = TextEditingController();
+  final TextEditingController _controller80To90 = TextEditingController();
+  final TextEditingController _controller90To100 = TextEditingController();
 
   @override
   void initState() {
@@ -108,7 +109,11 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
               '90% - 100%': pollDoc['90% - 100%']
             };
           } else {
-            print('Poll has expired or is not yet active.');
+            // Show a SnackBar if the poll has expired or is not yet active
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(content: Text('Poll has expired or is not yet active.')),
+            );
+            return null;
           }
         }
       }
@@ -130,8 +135,21 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     _controller70To80.text = pollData['70% - 80%'].toString();
     _controller80To90.text = pollData['80% - 90%'].toString();
     _controller90To100.text = pollData['90% - 100%'].toString();
+  }
 
-    print(pollData['10% - 20%']);
+  // Function to handle voting
+  Future<void> _handleVote(String voteOption) async {
+    if (_selectedGroupName != null) {
+      // Logic to submit vote to Firestore
+      // Here you can add Firestore logic to save the vote for the selected poll
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Voted $voteOption successfully!')),
+      );
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please select a group to vote.')),
+      );
+    }
   }
 
   // Widget to display percentage outputs
@@ -170,51 +188,91 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
           ? const Center(child: CircularProgressIndicator())
           : Padding(
               padding: const EdgeInsets.all(16.0),
-              child: Column(
-                children: [
-                  DropdownButtonFormField<String>(
-                    decoration: const InputDecoration(
-                      labelText: 'Group Name',
-                      border: OutlineInputBorder(),
-                    ),
-                    value: _selectedGroupName,
-                    items: _groupNames.map((name) {
-                      return DropdownMenuItem<String>(
-                        value: name,
-                        child: Text(name),
-                      );
-                    }).toList(),
-                    onChanged: (value) async {
-                      setState(() {
-                        _selectedGroupName = value;
-                      });
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Group Name',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedGroupName,
+                      items: _groupNames.map((name) {
+                        return DropdownMenuItem<String>(
+                          value: name,
+                          child: Text(name),
+                        );
+                      }).toList(),
+                      onChanged: (value) async {
+                        setState(() {
+                          _selectedGroupName = value;
+                        });
 
-                      if (value != null) {
-                        final pollData = await _fetchPollData(value);
-                        if (pollData != null) {
-                          _populateControllers(pollData);
+                        if (value != null) {
+                          final pollData = await _fetchPollData(value);
+                          if (pollData != null) {
+                            _populateControllers(pollData);
+                          }
                         }
-                      }
-                    },
-                    validator: (value) {
-                      if (value == null || value.isEmpty) {
-                        return 'Please select a group';
-                      }
-                      return null;
-                    },
-                  ),
-                  const SizedBox(height: 20),
-                  _buildPercentageOutput('0% - 10%', _controller0To10),
-                  _buildPercentageOutput('10% - 20%', _controller10To20),
-                  _buildPercentageOutput('20% - 30%', _controller20To30),
-                  _buildPercentageOutput('30% - 40%', _controller30To40),
-                  _buildPercentageOutput('40% - 50%', _controller40To50),
-                  _buildPercentageOutput('50% - 60%', _controller50To60),
-                  _buildPercentageOutput('60% - 70%', _controller60To70),
-                  _buildPercentageOutput('70% - 80%', _controller70To80),
-                  _buildPercentageOutput('80% - 90%', _controller80To90),
-                  _buildPercentageOutput('90% - 100%', _controller90To100),
-                ],
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a group';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 20),
+                    _buildPercentageOutput('0% - 10%', _controller0To10),
+                    _buildPercentageOutput('10% - 20%', _controller10To20),
+                    _buildPercentageOutput('20% - 30%', _controller20To30),
+                    _buildPercentageOutput('30% - 40%', _controller30To40),
+                    _buildPercentageOutput('40% - 50%', _controller40To50),
+                    _buildPercentageOutput('50% - 60%', _controller50To60),
+                    _buildPercentageOutput('60% - 70%', _controller60To70),
+                    _buildPercentageOutput('70% - 80%', _controller70To80),
+                    _buildPercentageOutput('80% - 90%', _controller80To90),
+                    _buildPercentageOutput('90% - 100%', _controller90To100),
+                    const SizedBox(height: 10),
+                    TextFormField(
+                      controller: _commentController,
+                      decoration: const InputDecoration(
+                        labelText: 'Comment',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    // Yes Button
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _handleVote('Yes'),
+                        style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            backgroundColor: Colors.green),
+                        child: const Text(
+                          'Yes',
+                          style: TextStyle(fontSize: 20, color: Colors.black),
+                        ),
+                      ),
+                    ),
+
+                    const SizedBox(height: 16.0),
+                    SizedBox(
+                      width: double.infinity,
+                      child: ElevatedButton(
+                        onPressed: () => _handleVote('No'),
+                        style: ElevatedButton.styleFrom(
+                            padding: const EdgeInsets.symmetric(vertical: 16.0),
+                            backgroundColor: Colors.red),
+                        child: const Text(
+                          'No',
+                          style: TextStyle(fontSize: 20, color: Colors.black),
+                        ),
+                      ),
+                    )
+                  ],
+                ),
               ),
             ),
     );
@@ -222,7 +280,6 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
 
   @override
   void dispose() {
-    // Dispose controllers when the widget is removed
     _controller0To10.dispose();
     _controller10To20.dispose();
     _controller20To30.dispose();
@@ -236,6 +293,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     super.dispose();
   }
 }
+
 
 
 
