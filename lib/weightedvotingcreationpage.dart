@@ -96,6 +96,7 @@ class _WeightedvotingcreationpageState
             'username': widget.username,
             'option': [], // Empty array for options
             'dateTimeNow': now,
+            'votedusers': [],
             'groupname': _selectedGroupName,
             'expirationTime': expiration,
             '0% - 10%': _controller0to10.text,

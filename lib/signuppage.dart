@@ -61,7 +61,9 @@ class _SignUpPageState extends State<SignUpPage> {
         'email': email,
         'password': encryptedPassword,
         'option': '',
-        'comment': ''
+        'comment': '',
+        'wightedvotingoption': '',
+        'weightedvotingcomment': ''
       });
 
       _usernameController.clear();
