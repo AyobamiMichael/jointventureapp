@@ -80,6 +80,10 @@ class _WeightedvotingcreationpageState
   }
 
   Future<void> _submitPoll() async {
+    final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
+    final weightedVotingCollection =
+        FirebaseFirestore.instance.collection('weightedvotingcollection');
+
     if (theAmountOfMoney != 0) {
       if (_formKey.currentState!.validate() && _selectedGroupName != null) {
         setState(() {
@@ -87,6 +91,35 @@ class _WeightedvotingcreationpageState
         });
 
         try {
+          // Check if poll has expaired before creating a new one
+          final groupQuerySnapshot = await groupCollection
+              .where('groupname', isEqualTo: _selectedGroupName)
+              .where('groupmembers', arrayContains: widget.username)
+              .get();
+          if (groupQuerySnapshot.docs.isNotEmpty) {
+            for (var groupDoc in groupQuerySnapshot.docs) {
+              String groupName = groupDoc['groupname'];
+
+              QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
+                  .where('groupname', isEqualTo: groupName)
+                  .orderBy('groupname', descending: false)
+                  .get();
+
+              for (var pollDoc in pollQuerySnapshot.docs) {
+                DateTime expirationTime =
+                    (pollDoc['expirationTime'] as Timestamp).toDate();
+
+                print(expirationTime);
+
+                DateTime now = DateTime.now();
+                if (now.isBefore(expirationTime)) {
+                  _showMessage(context, 'Voting is ongoing');
+                  return;
+                }
+              }
+            }
+          }
+
           final now = DateTime.now();
           final expiration = _getExpirationTime(now, _selectedDuration!);
 
@@ -325,12 +358,6 @@ class _WeightedvotingcreationpageState
     );
   }
 }
-
-
-
-
-
-
 
 /*import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';

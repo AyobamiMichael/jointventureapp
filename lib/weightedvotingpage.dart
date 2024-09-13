@@ -82,7 +82,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
 
         QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
             .where('groupname', isEqualTo: groupName)
-            .orderBy('groupname', descending: true)
+            .orderBy('groupname', descending: false)
             .get();
 
         //final pollDocId = pollQuerySnapshot.docs.first.id;
@@ -150,11 +150,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
         FirebaseFirestore.instance.collection('weightedvotingcollection');
 
     if (_selectedGroupName != null) {
-      // Logic to submit vote to Firestore
-      // Here you can add Firestore logic to save the vote for the selected poll
-      // Before voting, check for votedusers
-      // Update the weightedoption
-      /*try {
+      try {
         final userDoc = await userCollection
             .where('username', isEqualTo: widget.username)
             .limit(1)
@@ -164,73 +160,6 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
           print('User not found');
           return;
         }
-
-        // To check for votedusers
-        QuerySnapshot pollQuerySnapshotVotedUsers = await pollCollection
-            .where('votedusers', arrayContains: widget.username)
-            .get();
-
-        // for (var pollDoc in pollQuerySnapshotVotedUsers.docs) {
-        // print(pollDoc['votedusers']);
-        // }
-        /*print(pollQuerySnapshotVotedUsers.docs.first.exists);
-        if (pollQuerySnapshotVotedUsers.docs.first.exists) {
-          print('Not allowed');
-           if (mounted) {
-            ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('Multiple voting not allowed')),
-            );
-          }
-
-          return;
-        }*/
-
-        final userData = userDoc.docs.first;
-        final userDocId = userData.id;
-
-        await userCollection.doc(userDocId).update({
-          'wightedvotingoption': voteOption,
-          'weightedvotingcomment': comment
-        });
-
-        //   await pollCollection
-        //.where('groupname', isEqualTo: _selectedGroupName)
-        //.update({'votedusers': widget.username});
-
-        final pollQuerySnapshot = await pollCollection
-            .where('groupname', isEqualTo: _selectedGroupName)
-            .limit(1)
-            .get();
-
-        if (pollQuerySnapshot.docs.isEmpty) {
-          print('Poll not found');
-
-          return;
-        }
-
-        final pollDocId = pollQuerySnapshot.docs.first.id;
-        final pollDocSnapshot = await pollCollection.doc(pollDocId).get();
-        List<dynamic> currentVotedusers =
-            pollDocSnapshot.get('votedusers') ?? [];
-        currentVotedusers.add(widget.username);
-
-        await pollCollection
-            .doc(pollDocId)
-            .update({'votedusers': currentVotedusers, 'option': voteOption});
-
-        print('Option submitted: $voteOption');
-
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-                content: Text('Your vote has been submitted: $voteOption')),
-          );
-        }
-      } catch (e) {
-        print(e);
-      }*/
-
-      try {
         // Query to get the most recent poll based on the 'groupname' in descending order
         QuerySnapshot pollQuerySnapshot = await pollCollection
             .where('groupname', isEqualTo: _selectedGroupName)
@@ -243,21 +172,47 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
           return;
         }
 
+        // Check for double voting
+        /* if (currentVotedUsers.contains(widget.username)) {
+         
+        }*/
+
+        // Update UserCollection
+        final userData = userDoc.docs.first;
+        final userDocId = userData.id;
+
+        await userCollection.doc(userDocId).update({
+          'wightedvotingoption': voteOption,
+          'weightedvotingcomment': comment
+        });
         // Get the first document (most recent one)
         final pollDocId = pollQuerySnapshot.docs.first.id;
-
         // Retrieve the existing voted users array
         final pollDocSnapshot = await pollCollection.doc(pollDocId).get();
         List<dynamic> currentVotedUsers =
             pollDocSnapshot.get('votedusers') ?? [];
-
         // Add the current user to the votedusers list
         currentVotedUsers.add(widget.username);
-
         // Update the poll document with the new vote and voted users
+        //  if (currentVotedUsers.contains(widget.username)) {
+        //  print(currentVotedUsers.contains(widget.username));
+
+        //if (mounted) {
+        // ScaffoldMessenger.of(context).showSnackBar(
+        // const SnackBar(content: Text('Double Voting Not Allowed')),
+        //);
+        // }
+        //return;
+        //} else {
         await pollCollection.doc(pollDocId).update({
           'votedusers': currentVotedUsers, // Update voted users
-          'option': voteOption, // Update vote option
+        });
+        //}
+        List<dynamic> currentOptions = pollDocSnapshot.get('option') ?? [];
+        print(currentOptions);
+        currentOptions.add(voteOption);
+        await pollCollection.doc(pollDocId).update({
+          'option': currentOptions,
         });
 
         print('Option submitted: $voteOption');
