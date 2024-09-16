@@ -113,8 +113,9 @@ class _WeightedvotingcreationpageState
 
                 DateTime now = DateTime.now();
                 if (now.isBefore(expirationTime)) {
-                  _showMessage(context, 'Voting is ongoing');
-                  return;
+                  _showMessage(
+                      context, 'Voting is ongoing, but it will be qeued');
+                  //return;
                 }
               }
             }

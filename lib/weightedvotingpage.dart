@@ -19,6 +19,8 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
   final TextEditingController _commentController = TextEditingController();
 
   // TextEditingControllers for the percentage ranges
+
+  final TextEditingController _controllerPollCreator = TextEditingController();
   final TextEditingController _controller0To10 = TextEditingController();
   final TextEditingController _controller10To20 = TextEditingController();
   final TextEditingController _controller20To30 = TextEditingController();
@@ -82,7 +84,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
 
         QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
             .where('groupname', isEqualTo: groupName)
-            .orderBy('groupname', descending: false)
+            .orderBy('groupname', descending: true)
             .get();
 
         //final pollDocId = pollQuerySnapshot.docs.first.id;
@@ -111,7 +113,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
               '60% - 70%': pollDoc['60% - 70%'],
               '70% - 80%': pollDoc['70% - 80%'],
               '80% - 90%': pollDoc['80% - 90%'],
-              '90% - 100%': pollDoc['90% - 100%']
+              '90% - 100%': pollDoc['90% - 100%'],
             };
           } else {
             // Show a SnackBar if the poll has expired or is not yet active
@@ -130,6 +132,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
 
   // Populate the controllers with the poll data
   void _populateControllers(Map<String, dynamic> pollData) {
+    _controllerPollCreator.text = pollData['username'].toString();
     _controller0To10.text = pollData['0% - 10%'].toString();
     _controller10To20.text = pollData['10% - 20%'].toString();
     _controller20To30.text = pollData['20% - 30%'].toString();
@@ -304,6 +307,8 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                       },
                     ),
                     const SizedBox(height: 20),
+                    _buildPercentageOutput(
+                        'Created by', _controllerPollCreator),
                     _buildPercentageOutput('0% - 10%', _controller0To10),
                     _buildPercentageOutput('10% - 20%', _controller10To20),
                     _buildPercentageOutput('20% - 30%', _controller20To30),
