@@ -166,7 +166,8 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
         // Query to get the most recent poll based on the 'groupname' in descending order
         QuerySnapshot pollQuerySnapshot = await pollCollection
             .where('groupname', isEqualTo: _selectedGroupName)
-            .orderBy('groupname', descending: true) // Order in descending order
+            .orderBy('documentId',
+                descending: true) // Order in descending order
             .limit(1) // Fetch only the most recent one
             .get();
 
