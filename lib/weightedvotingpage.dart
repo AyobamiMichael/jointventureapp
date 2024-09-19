@@ -82,9 +82,14 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
       for (var groupDoc in groupQuerySnapshot.docs) {
         String groupName = groupDoc['groupname'];
 
+        // FOR SORTING
+        await weightedVotingCollection
+            .orderBy('groupname', descending: false)
+            .get();
+
+        // FOR SELECTING
         QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
             .where('groupname', isEqualTo: groupName)
-            .orderBy('groupname', descending: true)
             .get();
 
         //final pollDocId = pollQuerySnapshot.docs.first.id;
@@ -94,7 +99,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
           DateTime expirationTime =
               (pollDoc['expirationTime'] as Timestamp).toDate();
 
-          print(expirationTime);
+          print(expirationTime.toString());
 
           DateTime now = DateTime.now();
           if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
