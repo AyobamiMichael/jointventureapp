@@ -14,7 +14,9 @@ class WeightedVotingPage extends StatefulWidget {
 
 class _WeightedVotingPageState extends State<WeightedVotingPage> {
   String? _selectedGroupName;
+  String? _selectedPollName;
   List<String> _groupNames = [];
+  final List<String> _pollNames = [];
   bool _isLoading = false;
   final TextEditingController _commentController = TextEditingController();
 
@@ -67,16 +69,22 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     }
   }
 
+  Future<Map<String, dynamic>?> _fetchPollDates(String groupname) async {}
+
   // Fetch poll data
-  Future<Map<String, dynamic>?> _fetchPollData(String groupname) async {
-    final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
+  Future<Map<String, dynamic>?> _fetchPollData(
+      String pollDateOfCreation) async {
+    // final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
     final weightedVotingCollection =
         FirebaseFirestore.instance.collection('weightedvotingcollection');
 
     try {
-      final groupQuerySnapshot = await groupCollection
-          .where('groupname', isEqualTo: groupname)
-          .where('groupmembers', arrayContains: widget.username)
+      // final groupQuerySnapshot = await groupCollection
+      //   .where('groupname', isEqualTo: groupname)
+      // .where('groupmembers', arrayContains: widget.username)
+      // .get();
+      final groupQuerySnapshot = await weightedVotingCollection
+          .where('', isEqualTo: pollDateOfCreation)
           .get();
 
       for (var groupDoc in groupQuerySnapshot.docs) {
@@ -89,7 +97,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
 
         // FOR SELECTING
         QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
-            .where('groupname', isEqualTo: groupName)
+            .where('', isEqualTo: pollDateOfCreation)
             .get();
 
         //final pollDocId = pollQuerySnapshot.docs.first.id;
@@ -299,9 +307,11 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                         });
 
                         if (value != null) {
-                          final pollData = await _fetchPollData(value);
+                          // set the polls here
+                          final pollData = await _fetchPollDates(value);
                           if (pollData != null) {
-                            _populateControllers(pollData);
+                            //_populateControllers(pollData);
+                            // Populate the poll list of dates
                           }
                         }
                       },
@@ -313,6 +323,38 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                       },
                     ),
                     const SizedBox(height: 20),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Poll',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedPollName,
+                      items: _pollNames.map((poll) {
+                        return DropdownMenuItem<String>(
+                          value: poll,
+                          child: Text(poll),
+                        );
+                      }).toList(),
+                      onChanged: (value) async {
+                        setState(() {
+                          _selectedPollName = value;
+                        });
+
+                        if (value != null) {
+                          final pollData = await _fetchPollData(value);
+                          if (pollData != null) {
+                            _populateControllers(pollData);
+                          }
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a poll';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
                     _buildPercentageOutput(
                         'Created by', _controllerPollCreator),
                     _buildPercentageOutput('0% - 10%', _controller0To10),
