@@ -1,6 +1,7 @@
 import 'dart:ffi';
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class WeightedVotingPage extends StatefulWidget {
   final String username;
@@ -14,9 +15,9 @@ class WeightedVotingPage extends StatefulWidget {
 
 class _WeightedVotingPageState extends State<WeightedVotingPage> {
   String? _selectedGroupName;
-  String? _selectedPollName;
+  String? _selectedPollDate;
   List<String> _groupNames = [];
-  final List<String> _pollNames = [];
+  List<String> _pollDates = [];
   bool _isLoading = false;
   final TextEditingController _commentController = TextEditingController();
 
@@ -69,72 +70,77 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchPollDates(String groupname) async {}
+  Future<void> _fetchPollDates(String groupname) async {
+    try {
+      final weightedVotingCollection =
+          FirebaseFirestore.instance.collection('weightedvotingcollection');
+      final groupQuerySnapshot = await weightedVotingCollection
+          .where('groupname', isEqualTo: groupname)
+          .get();
+      List<String> pollDatesOfCreation = groupQuerySnapshot.docs.map((doc) {
+        final date = (doc['dateTimeNow'] as Timestamp).toDate();
+        return DateFormat('yyyy-MM-dd HH:mm')
+            .format(date); // Using intl package
+      }).toList();
 
-  // Fetch poll data
+      setState(() {
+        _pollDates = pollDatesOfCreation;
+      });
+    } catch (e) {
+      print('Error fetching date: $e');
+    }
+  }
+
   Future<Map<String, dynamic>?> _fetchPollData(
       String pollDateOfCreation) async {
-    // final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
     final weightedVotingCollection =
         FirebaseFirestore.instance.collection('weightedvotingcollection');
 
     try {
-      // final groupQuerySnapshot = await groupCollection
-      //   .where('groupname', isEqualTo: groupname)
-      // .where('groupmembers', arrayContains: widget.username)
-      // .get();
-      final groupQuerySnapshot = await weightedVotingCollection
-          .where('', isEqualTo: pollDateOfCreation)
+      // Convert the string pollDateOfCreation back to a DateTime object
+      DateTime selectedDate =
+          DateFormat('yyyy-MM-dd HH:mm').parse(pollDateOfCreation);
+
+      // Convert the selectedDate to a Firestore Timestamp
+      Timestamp selectedTimestamp = Timestamp.fromDate(selectedDate);
+
+      QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
+          .where('dateTimeNow', isEqualTo: selectedTimestamp)
           .get();
+      print(pollQuerySnapshot.docs);
+      for (var pollDoc in pollQuerySnapshot.docs) {
+        String pollDurationStr = pollDoc['pollDuration'];
+        DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
+        DateTime expirationTime =
+            (pollDoc['expirationTime'] as Timestamp).toDate();
+        print('OKAY');
+        print(expirationTime.toString());
 
-      for (var groupDoc in groupQuerySnapshot.docs) {
-        String groupName = groupDoc['groupname'];
-
-        // FOR SORTING
-        await weightedVotingCollection
-            .orderBy('groupname', descending: false)
-            .get();
-
-        // FOR SELECTING
-        QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
-            .where('', isEqualTo: pollDateOfCreation)
-            .get();
-
-        //final pollDocId = pollQuerySnapshot.docs.first.id;
-        for (var pollDoc in pollQuerySnapshot.docs) {
-          String pollDurationStr = pollDoc['pollDuration'];
-          DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
-          DateTime expirationTime =
-              (pollDoc['expirationTime'] as Timestamp).toDate();
-
-          print(expirationTime.toString());
-
-          DateTime now = DateTime.now();
-          if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
-            return {
-              'pollName': pollDoc['pollName'],
-              'option': pollDoc['option'],
-              'dateTimeNow': dateTimeNow,
-              'expirationTime': expirationTime,
-              'username': pollDoc['username'],
-              '0% - 10%': pollDoc['0% - 10%'],
-              '10% - 20%': pollDoc['10% - 20%'],
-              '20% - 30%': pollDoc['20% - 30%'],
-              '30% - 40%': pollDoc['30% - 40%'],
-              '40% - 50%': pollDoc['40% - 50%'],
-              '50% - 60%': pollDoc['50% - 60%'],
-              '60% - 70%': pollDoc['60% - 70%'],
-              '70% - 80%': pollDoc['70% - 80%'],
-              '80% - 90%': pollDoc['80% - 90%'],
-              '90% - 100%': pollDoc['90% - 100%'],
-            };
-          } else {
-            // Show a SnackBar if the poll has expired or is not yet active
-            ScaffoldMessenger.of(context).showSnackBar(
-              SnackBar(content: Text('Poll has expired or is not yet active.')),
-            );
-            return null;
-          }
+        DateTime now = DateTime.now();
+        if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
+          return {
+            'pollName': pollDoc['pollName'],
+            'option': pollDoc['option'],
+            'dateTimeNow': dateTimeNow,
+            'expirationTime': expirationTime,
+            'username': pollDoc['username'],
+            '0% - 10%': pollDoc['0% - 10%'],
+            '10% - 20%': pollDoc['10% - 20%'],
+            '20% - 30%': pollDoc['20% - 30%'],
+            '30% - 40%': pollDoc['30% - 40%'],
+            '40% - 50%': pollDoc['40% - 50%'],
+            '50% - 60%': pollDoc['50% - 60%'],
+            '60% - 70%': pollDoc['60% - 70%'],
+            '70% - 80%': pollDoc['70% - 80%'],
+            '80% - 90%': pollDoc['80% - 90%'],
+            '90% - 100%': pollDoc['90% - 100%'],
+          };
+        } else {
+          // Show a SnackBar if the poll has expired or is not yet active
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Poll has expired or is not yet active.')),
+          );
+          return null;
         }
       }
     } catch (e) {
@@ -142,6 +148,60 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     }
     return null;
   }
+  // Fetch poll data
+  /*Future<Map<String, dynamic>?> _fetchPollData(
+      String pollDateOfCreation) async {
+    // final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
+    final weightedVotingCollection =
+        FirebaseFirestore.instance.collection('weightedvotingcollection');
+
+    try {
+      QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
+          .where('dateTimeNow', isEqualTo: pollDateOfCreation)
+          .get();
+
+      //final pollDocId = pollQuerySnapshot.docs.first.id;
+      for (var pollDoc in pollQuerySnapshot.docs) {
+        String pollDurationStr = pollDoc['pollDuration'];
+        DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
+        DateTime expirationTime =
+            (pollDoc['expirationTime'] as Timestamp).toDate();
+
+        print(expirationTime.toString());
+
+        DateTime now = DateTime.now();
+        if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
+          return {
+            'pollName': pollDoc['pollName'],
+            'option': pollDoc['option'],
+            'dateTimeNow': dateTimeNow,
+            'expirationTime': expirationTime,
+            'username': pollDoc['username'],
+            '0% - 10%': pollDoc['0% - 10%'],
+            '10% - 20%': pollDoc['10% - 20%'],
+            '20% - 30%': pollDoc['20% - 30%'],
+            '30% - 40%': pollDoc['30% - 40%'],
+            '40% - 50%': pollDoc['40% - 50%'],
+            '50% - 60%': pollDoc['50% - 60%'],
+            '60% - 70%': pollDoc['60% - 70%'],
+            '70% - 80%': pollDoc['70% - 80%'],
+            '80% - 90%': pollDoc['80% - 90%'],
+            '90% - 100%': pollDoc['90% - 100%'],
+          };
+        } else {
+          // Show a SnackBar if the poll has expired or is not yet active
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Poll has expired or is not yet active.')),
+          );
+          return null;
+        }
+      }
+      //}
+    } catch (e) {
+      print('Error fetching poll data: $e');
+    }
+    return null;
+  }*/
 
   // Populate the controllers with the poll data
   void _populateControllers(Map<String, dynamic> pollData) {
@@ -307,49 +367,49 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                         });
 
                         if (value != null) {
+                          await _fetchPollDates(value);
+                          //if (pollData != null) {
+                          //_populateControllers(pollData);
+                          //}
+                        }
+                      },
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Please select a group name';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    DropdownButtonFormField<String>(
+                      decoration: const InputDecoration(
+                        labelText: 'Poll Date',
+                        border: OutlineInputBorder(),
+                      ),
+                      value: _selectedPollDate,
+                      items: _pollDates.map((pollDate) {
+                        return DropdownMenuItem<String>(
+                          value: pollDate,
+                          child: Text(pollDate),
+                        );
+                      }).toList(),
+                      onChanged: (value) async {
+                        setState(() {
+                          _selectedPollDate = value;
+                        });
+
+                        if (value != null) {
                           // set the polls here
-                          final pollData = await _fetchPollDates(value);
+                          final pollData = await _fetchPollData(value);
                           if (pollData != null) {
-                            //_populateControllers(pollData);
+                            _populateControllers(pollData);
                             // Populate the poll list of dates
                           }
                         }
                       },
                       validator: (value) {
                         if (value == null || value.isEmpty) {
-                          return 'Please select a group';
-                        }
-                        return null;
-                      },
-                    ),
-                    const SizedBox(height: 20),
-                    DropdownButtonFormField<String>(
-                      decoration: const InputDecoration(
-                        labelText: 'Poll',
-                        border: OutlineInputBorder(),
-                      ),
-                      value: _selectedPollName,
-                      items: _pollNames.map((poll) {
-                        return DropdownMenuItem<String>(
-                          value: poll,
-                          child: Text(poll),
-                        );
-                      }).toList(),
-                      onChanged: (value) async {
-                        setState(() {
-                          _selectedPollName = value;
-                        });
-
-                        if (value != null) {
-                          final pollData = await _fetchPollData(value);
-                          if (pollData != null) {
-                            _populateControllers(pollData);
-                          }
-                        }
-                      },
-                      validator: (value) {
-                        if (value == null || value.isEmpty) {
-                          return 'Please select a poll';
+                          return 'Please select a date';
                         }
                         return null;
                       },
