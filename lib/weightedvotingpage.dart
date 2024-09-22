@@ -15,9 +15,9 @@ class WeightedVotingPage extends StatefulWidget {
 
 class _WeightedVotingPageState extends State<WeightedVotingPage> {
   String? _selectedGroupName;
-  String? _selectedPollDate;
+  String? _selectedPollTitle;
   List<String> _groupNames = [];
-  List<String> _pollDates = [];
+  List<String> _pollTitles = [];
   bool _isLoading = false;
   final TextEditingController _commentController = TextEditingController();
 
@@ -70,46 +70,44 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     }
   }
 
-  Future<void> _fetchPollDates(String groupname) async {
+  String pending = '';
+  Future<void> _fetchPollTitles(String groupname) async {
     try {
       final weightedVotingCollection =
           FirebaseFirestore.instance.collection('weightedvotingcollection');
+
+      // Query Firestore based on the groupname field
       final groupQuerySnapshot = await weightedVotingCollection
           .where('groupname', isEqualTo: groupname)
           .get();
-      List<String> pollDatesOfCreation = groupQuerySnapshot.docs.map((doc) {
-        final date = (doc['dateTimeNow'] as Timestamp).toDate();
-        return DateFormat('yyyy-MM-dd HH:mm')
-            .format(date); // Using intl package
-      }).toList();
 
+      // Map each document to its 'pollTitle' field
+      List<String> listOfPollTitles = groupQuerySnapshot.docs
+          .where((doc) => doc['pending'] == pending)
+          .map((doc) {
+        return doc['pollTitle'] as String;
+      }).toList();
+      // Update the state with the list of poll titles
       setState(() {
-        _pollDates = pollDatesOfCreation;
+        _pollTitles = listOfPollTitles;
       });
     } catch (e) {
-      print('Error fetching date: $e');
+      print('Error fetching poll titles: $e');
     }
   }
 
-  Future<Map<String, dynamic>?> _fetchPollData(
-      String pollDateOfCreation) async {
+  Future<Map<String, dynamic>?> _fetchPollData(String pollTitle) async {
     final weightedVotingCollection =
         FirebaseFirestore.instance.collection('weightedvotingcollection');
 
     try {
-      // Convert the string pollDateOfCreation back to a DateTime object
-      DateTime selectedDate =
-          DateFormat('yyyy-MM-dd HH:mm').parse(pollDateOfCreation);
-
-      // Convert the selectedDate to a Firestore Timestamp
-      Timestamp selectedTimestamp = Timestamp.fromDate(selectedDate);
-
       QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
-          .where('dateTimeNow', isEqualTo: selectedTimestamp)
+          .where('pollTitle', isEqualTo: pollTitle)
           .get();
       print(pollQuerySnapshot.docs);
       for (var pollDoc in pollQuerySnapshot.docs) {
         String pollDurationStr = pollDoc['pollDuration'];
+        String pollPendingStatus = pollDoc['pending'];
         DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
         DateTime expirationTime =
             (pollDoc['expirationTime'] as Timestamp).toDate();
@@ -117,9 +115,17 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
         print(expirationTime.toString());
 
         DateTime now = DateTime.now();
+        if (pollPendingStatus == '' && now.isAfter(expirationTime)) {
+          print('Expired');
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Poll has expired')),
+          );
+          return null;
+        }
+
         if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
           return {
-            'pollName': pollDoc['pollName'],
+            'pollTitle': pollDoc['pollTitle'],
             'option': pollDoc['option'],
             'dateTimeNow': dateTimeNow,
             'expirationTime': expirationTime,
@@ -135,11 +141,17 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
             '80% - 90%': pollDoc['80% - 90%'],
             '90% - 100%': pollDoc['90% - 100%'],
           };
-        } else {
+        } else if (now.isAfter(expirationTime)) {
+          setState(() {
+            pending = 'yes';
+          });
+        } else if (pollPendingStatus == '' && now.isAfter(expirationTime)) {
           // Show a SnackBar if the poll has expired or is not yet active
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Poll has expired or is not yet active.')),
           );
+
+          _resetControllers();
           return null;
         }
       }
@@ -148,60 +160,20 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
     }
     return null;
   }
-  // Fetch poll data
-  /*Future<Map<String, dynamic>?> _fetchPollData(
-      String pollDateOfCreation) async {
-    // final groupCollection = FirebaseFirestore.instance.collection('groupinfo');
-    final weightedVotingCollection =
-        FirebaseFirestore.instance.collection('weightedvotingcollection');
 
-    try {
-      QuerySnapshot pollQuerySnapshot = await weightedVotingCollection
-          .where('dateTimeNow', isEqualTo: pollDateOfCreation)
-          .get();
-
-      //final pollDocId = pollQuerySnapshot.docs.first.id;
-      for (var pollDoc in pollQuerySnapshot.docs) {
-        String pollDurationStr = pollDoc['pollDuration'];
-        DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
-        DateTime expirationTime =
-            (pollDoc['expirationTime'] as Timestamp).toDate();
-
-        print(expirationTime.toString());
-
-        DateTime now = DateTime.now();
-        if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
-          return {
-            'pollName': pollDoc['pollName'],
-            'option': pollDoc['option'],
-            'dateTimeNow': dateTimeNow,
-            'expirationTime': expirationTime,
-            'username': pollDoc['username'],
-            '0% - 10%': pollDoc['0% - 10%'],
-            '10% - 20%': pollDoc['10% - 20%'],
-            '20% - 30%': pollDoc['20% - 30%'],
-            '30% - 40%': pollDoc['30% - 40%'],
-            '40% - 50%': pollDoc['40% - 50%'],
-            '50% - 60%': pollDoc['50% - 60%'],
-            '60% - 70%': pollDoc['60% - 70%'],
-            '70% - 80%': pollDoc['70% - 80%'],
-            '80% - 90%': pollDoc['80% - 90%'],
-            '90% - 100%': pollDoc['90% - 100%'],
-          };
-        } else {
-          // Show a SnackBar if the poll has expired or is not yet active
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(content: Text('Poll has expired or is not yet active.')),
-          );
-          return null;
-        }
-      }
-      //}
-    } catch (e) {
-      print('Error fetching poll data: $e');
-    }
-    return null;
-  }*/
+  void _resetControllers() {
+    _controllerPollCreator.clear();
+    _controller0To10.clear();
+    _controller10To20.clear();
+    _controller20To30.clear();
+    _controller30To40.clear();
+    _controller40To50.clear();
+    _controller50To60.clear();
+    _controller60To70.clear();
+    _controller70To80.clear();
+    _controller80To90.clear();
+    _controller90To100.clear();
+  }
 
   // Populate the controllers with the poll data
   void _populateControllers(Map<String, dynamic> pollData) {
@@ -238,9 +210,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
         }
         // Query to get the most recent poll based on the 'groupname' in descending order
         QuerySnapshot pollQuerySnapshot = await pollCollection
-            .where('groupname', isEqualTo: _selectedGroupName)
-            .orderBy('documentId',
-                descending: true) // Order in descending order
+            .where('pollTitle', isEqualTo: _selectedPollTitle)
             .limit(1) // Fetch only the most recent one
             .get();
 
@@ -248,11 +218,6 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
           print('Poll not found');
           return;
         }
-
-        // Check for double voting
-        /* if (currentVotedUsers.contains(widget.username)) {
-         
-        }*/
 
         // Update UserCollection
         final userData = userDoc.docs.first;
@@ -268,6 +233,14 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
         final pollDocSnapshot = await pollCollection.doc(pollDocId).get();
         List<dynamic> currentVotedUsers =
             pollDocSnapshot.get('votedusers') ?? [];
+
+        if (currentVotedUsers.contains(widget.username)) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+                content: Text('You have already voted in this poll.')),
+          );
+          return;
+        }
         // Add the current user to the votedusers list
         currentVotedUsers.add(widget.username);
         // Update the poll document with the new vote and voted users
@@ -299,6 +272,7 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
             SnackBar(
                 content: Text('Your vote has been submitted: $voteOption')),
           );
+          _resetControllers();
         }
       } catch (e) {
         print('Error submitting vote: $e');
@@ -365,9 +339,9 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                         setState(() {
                           _selectedGroupName = value;
                         });
-
+                        _resetControllers();
                         if (value != null) {
-                          await _fetchPollDates(value);
+                          await _fetchPollTitles(value);
                           //if (pollData != null) {
                           //_populateControllers(pollData);
                           //}
@@ -383,19 +357,19 @@ class _WeightedVotingPageState extends State<WeightedVotingPage> {
                     const SizedBox(height: 10),
                     DropdownButtonFormField<String>(
                       decoration: const InputDecoration(
-                        labelText: 'Poll Date',
+                        labelText: 'Poll Title',
                         border: OutlineInputBorder(),
                       ),
-                      value: _selectedPollDate,
-                      items: _pollDates.map((pollDate) {
+                      value: _selectedPollTitle,
+                      items: _pollTitles.map((pollTitle) {
                         return DropdownMenuItem<String>(
-                          value: pollDate,
-                          child: Text(pollDate),
+                          value: pollTitle,
+                          child: Text(pollTitle),
                         );
                       }).toList(),
                       onChanged: (value) async {
                         setState(() {
-                          _selectedPollDate = value;
+                          _selectedPollTitle = value;
                         });
 
                         if (value != null) {
