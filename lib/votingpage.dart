@@ -60,7 +60,7 @@ class _VotingPageState extends State<VotingPage> {
           DateTime dateTimeNow = (pollDoc['dateTimeNow'] as Timestamp).toDate();
           DateTime expirationTime =
               (pollDoc['expirationTime'] as Timestamp).toDate();
-
+          print(expirationTime);
           DateTime now = DateTime.now();
           if (now.isAfter(dateTimeNow) && now.isBefore(expirationTime)) {
             int pollDurationInSeconds = _parsePollDuration(pollDurationStr);
@@ -240,10 +240,25 @@ class _VotingPageState extends State<VotingPage> {
                             style: const TextStyle(fontSize: 20.0),
                           ),
                           const SizedBox(height: 16.0),
-                          if (imageUrl != null) ...[
+                          // if (imageUrl != null) ...[
+                          // Image.network(imageUrl),
+                          //const SizedBox(height: 16.0),
+                          //],
+                          if (imageUrl != null &&
+                              imageUrl.isNotEmpty &&
+                              Uri.tryParse(imageUrl)?.hasAbsolutePath ==
+                                  true) ...[
                             Image.network(imageUrl),
                             const SizedBox(height: 16.0),
+                          ] else ...[
+                            const Placeholder(
+                              fallbackHeight:
+                                  200, // Adjust the height as needed
+                              fallbackWidth: double.infinity,
+                            ),
+                            const SizedBox(height: 16.0),
                           ],
+
                           TextFormField(
                             controller: _commentController,
                             decoration: const InputDecoration(
