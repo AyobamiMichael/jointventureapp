@@ -1,6 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:jointventureapp/weightedvotingpage.dart';
+import 'package:jointventureapp/weightedvotingresultpage.dart';
 
 class Weightedvotingcreationpage extends StatefulWidget {
   final String username;
@@ -344,6 +345,11 @@ class _WeightedvotingcreationpageState
                       const SizedBox(height: 16.0),
                       _buildButton('Results', Colors.blue, () {
                         // Add functionality for Results button here
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                              builder: (context) => WeightedVotingResultPage(
+                                  username: widget.username)),
+                        );
                       }),
                     ],
                   ),
