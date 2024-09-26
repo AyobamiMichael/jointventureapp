@@ -63,7 +63,8 @@ class _SignUpPageState extends State<SignUpPage> {
         'option': '',
         'comment': '',
         'wightedvotingoption': '',
-        'weightedvotingcomment': ''
+        'weightedvotingcomment': '',
+        'VotingPower': ''
       });
 
       _usernameController.clear();
@@ -105,9 +106,9 @@ class _SignUpPageState extends State<SignUpPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Atlantis-UgarSoft')),
+      appBar: AppBar(title: const Text('')),
       body: Container(
-        color: Colors.lightBlue[50],
+        color: Colors.black,
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
@@ -119,11 +120,11 @@ class _SignUpPageState extends State<SignUpPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/images/M21logo.png',
+                    'assets/images/igwebuike latest logo.png',
                     width: 200,
                     height: 200,
                   ),
-                  const Text(
+                  /*const Text(
                     'M 2 1 W A L L E T',
                     style: TextStyle(
                         fontSize: 25,
@@ -138,43 +139,43 @@ class _SignUpPageState extends State<SignUpPage> {
                         fontWeight: FontWeight.bold,
                         color: Colors.black),
                     textAlign: TextAlign.center,
-                  ),
+                  ),*/
                   TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Username',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _emailController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Email',
-                    ),
-                  ),
-                  const SizedBox(height: 20),
-                  TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Password',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
-                        ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Username',
                       ),
-                    ),
-                  ),
+                      style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 20),
+                  TextField(
+                      controller: _emailController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Email',
+                      ),
+                      style: const TextStyle(color: Colors.white)),
+                  const SizedBox(height: 20),
+                  TextField(
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: 'Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
+                        ),
+                      ),
+                      style: const TextStyle(color: Colors.white)),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity,
@@ -182,7 +183,7 @@ class _SignUpPageState extends State<SignUpPage> {
                       onPressed: () => _signUp(context),
                       style: ElevatedButton.styleFrom(
                         backgroundColor:
-                            const Color.fromARGB(255, 166, 186, 209),
+                            const Color.fromARGB(255, 97, 132, 185),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.zero,
                         ),

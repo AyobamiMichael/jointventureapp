@@ -70,25 +70,27 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Atlantis-UgarSoft')),
+      appBar: AppBar(title: const Text('')),
       body: Container(
-        color: Colors.lightBlue[50], // Background color
+        color: Colors.black, // Background color
         child: Center(
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: 400, // Constrain the maximum width of the content
-              ),
+              constraints: const BoxConstraints(
+                  maxWidth: 400,
+                  maxHeight: double
+                      .infinity // Constrain the maximum width of the content
+                  ),
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Image.asset(
-                    'assets/images/M21logo.png',
+                    'assets/images/igwebuike latest logo.png',
                     width: 200,
                     height: 200,
                   ),
-                  const Text(
+                  /*const Text(
                     'M 2 1 W A L L E T',
                     style: TextStyle(
                         fontSize: 25,
@@ -103,36 +105,36 @@ class _LoginPageState extends State<LoginPage> {
                         fontWeight: FontWeight.bold,
                         color: Colors.black),
                     textAlign: TextAlign.center,
-                  ),
+                  ),*/
                   const SizedBox(height: 30),
                   TextField(
-                    controller: _usernameController,
-                    decoration: const InputDecoration(
-                      border: OutlineInputBorder(),
-                      labelText: 'Username',
-                    ),
-                  ),
+                      controller: _usernameController,
+                      decoration: const InputDecoration(
+                        border: OutlineInputBorder(),
+                        labelText: 'Username',
+                      ),
+                      style: const TextStyle(color: Colors.white)),
                   const SizedBox(height: 20),
                   TextField(
-                    controller: _passwordController,
-                    obscureText: _obscurePassword,
-                    decoration: InputDecoration(
-                      border: const OutlineInputBorder(),
-                      labelText: 'Password',
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          _obscurePassword
-                              ? Icons.visibility_off
-                              : Icons.visibility,
+                      controller: _passwordController,
+                      obscureText: _obscurePassword,
+                      decoration: InputDecoration(
+                        border: const OutlineInputBorder(),
+                        labelText: 'Password',
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscurePassword
+                                ? Icons.visibility_off
+                                : Icons.visibility,
+                          ),
+                          onPressed: () {
+                            setState(() {
+                              _obscurePassword = !_obscurePassword;
+                            });
+                          },
                         ),
-                        onPressed: () {
-                          setState(() {
-                            _obscurePassword = !_obscurePassword;
-                          });
-                        },
                       ),
-                    ),
-                  ),
+                      style: const TextStyle(color: Colors.white)),
                   const SizedBox(height: 20),
                   SizedBox(
                     width: double.infinity, // Full width button
