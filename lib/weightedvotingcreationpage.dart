@@ -275,7 +275,7 @@ class _WeightedvotingcreationpageState
               controller: minController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Min Amount',
+                labelText: '',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -287,14 +287,14 @@ class _WeightedvotingcreationpageState
           ),
           const Padding(
             padding: EdgeInsets.symmetric(horizontal: 8.0),
-            child: Text('To'),
+            child: Text(''),
           ),
           Expanded(
             child: TextFormField(
               controller: maxController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Max Amount',
+                labelText: '',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -310,7 +310,7 @@ class _WeightedvotingcreationpageState
               controller: votingPowerController,
               keyboardType: TextInputType.number,
               decoration: const InputDecoration(
-                labelText: 'Voting Power',
+                labelText: '',
               ),
               validator: (value) {
                 if (value == null || value.isEmpty) {
@@ -329,7 +329,7 @@ class _WeightedvotingcreationpageState
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Weighted Voting Page'),
+        title: const Text('Weighted Voting'),
       ),
       body: Stack(
         children: [
@@ -344,6 +344,15 @@ class _WeightedvotingcreationpageState
                   key: _formKey,
                   child: Column(
                     children: [
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      const SizedBox(
+                        child: Text(
+                          '    MIN                    MAX                 WEIGHT',
+                          style: TextStyle(fontSize: 15),
+                        ),
+                      ),
                       _buildPercentageInput(),
                       DropdownButtonFormField<String>(
                         decoration: const InputDecoration(

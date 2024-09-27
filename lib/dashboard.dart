@@ -25,7 +25,10 @@ class _DashboardState extends State<Dashboard> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atlantis-UgarSoft'),
+        title: const Text(
+          'IGWE BU IKE',
+          style: TextStyle(fontSize: 20, color: Colors.green),
+        ),
       ),
       drawer: _buildDrawer(context),
       body: Padding(

@@ -28,7 +28,7 @@ class MyApp extends StatelessWidget {
     return BlocProvider(
       create: (context) => PollCubit(), // Provide PollCubit
       child: MaterialApp(
-        title: 'Joint Venture App',
+        title: 'Igwe Bu Ike',
         theme: ThemeData(
           primarySwatch: Colors.blue,
         ),

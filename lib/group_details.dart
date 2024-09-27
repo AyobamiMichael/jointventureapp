@@ -11,7 +11,7 @@ class GroupDetailsPage extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Atlantis-UgarSoft'),
+        title: const Text('Igwe Bu Ike'),
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
